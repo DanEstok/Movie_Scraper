@@ -1,0 +1,43 @@
+<RootWidget>:
+    size: 800, 600
+
+    GridLayout:
+        cols: 2
+        rows: 6
+
+        Label:
+            text: 'Year Range:'
+
+        TextInput:
+            id: start_year
+            width: 50
+            text: root.start_year
+            multiline: False
+
+        TextInput:
+            id: end_year
+            width: 50
+            text: root.end_year
+            multiline: False
+
+        # Add other GUI elements here
+
+        Button:
+            text: 'Search'
+            on_press: root.add_torrents()
+
+        Button:
+            text: 'Download Subtitles'
+            on_press: root.download_subtitles()
+
+        Button:
+            text: 'Create Excel Spreadsheet'
+            on_press: root.create_excel_spreadsheet()
+
+        Button:
+            text: 'Create Word Document'
+            on_press: root.create_word_document()
+
+        Button:
+            text: 'Exit'
+            on_press: app.stop()
