@@ -8,6 +8,8 @@ from kivy.uix.button import Button
 from kivy.uix.textinput import TextInput
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.gridlayout import GridLayout
+from kivy.uix.popup import Popup
+from kivy.uix.progressbar import ProgressBar
 
 # Set up logging
 logging.basicConfig(filename='/mnt/data/movie_info_log.txt', level=logging.ERROR, format='%(asctime)s:%(levelname)s:%(message)s')
@@ -15,50 +17,35 @@ logging.basicConfig(filename='/mnt/data/movie_info_log.txt', level=logging.ERROR
 class MovieTorrentDownloaderApp(App):
     def build(self):
         # Define the root widget layout
-        root_layout = self._build_root_layout()
+        root_layout = BoxLayout(orientation='vertical')
 
-        # Add header section
-        root_layout.add_widget(self._build_header_layout())
-
-        # Add main content area
-        root_layout.add_widget(self._build_content_layout())
-
-        return root_layout
-
-    def _build_root_layout(self):
-        return BoxLayout(orientation='vertical')
-
-    def _build_header_layout(self):
+        # Header section
         header_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height='50dp')
         logo_image = Image(source='logo.png', size_hint_x=None, width='50dp')
         header_layout.add_widget(logo_image)
         title_label = Label(text='Movie Torrent Downloader', font_size='20sp', bold=True, size_hint_x=None, width=200)
         header_layout.add_widget(title_label)
-        return header_layout
+        root_layout.add_widget(header_layout)
 
-    def _build_content_layout(self):
+        # Main content area
         content_layout = BoxLayout(orientation='vertical', padding='10dp')
-        content_layout.add_widget(self._build_search_bar())
-        content_layout.add_widget(self._build_movie_list())
-        content_layout.add_widget(self._build_footer_section())
-        return content_layout
-
-    def _build_search_bar(self):
+        
+        # Search bar
         search_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height='40dp')
         self.search_input = TextInput(hint_text='Search for movies...', multiline=False, size_hint_x=0.8)
         search_layout.add_widget(self.search_input)
         search_button = Button(text='Search')
         search_button.bind(on_release=self.search_movies)
         search_layout.add_widget(search_button)
-        return search_layout
+        content_layout.add_widget(search_layout)
 
-    def _build_movie_list(self):
+        # Movie list
         self.movie_grid = GridLayout(cols=3, spacing='10dp', size_hint_y=None, row_default_height='100dp', padding='10dp')
         movie_scrollview = ScrollView()
         movie_scrollview.add_widget(self.movie_grid)
-        return movie_scrollview
+        content_layout.add_widget(movie_scrollview)
 
-    def _build_footer_section(self):
+        # Footer section
         footer_layout = BoxLayout(orientation='horizontal', size_hint_y=None, height='50dp', spacing='10dp')
         prev_button = Button(text='Previous Page')
         prev_button.bind(on_release=self.previous_page)
@@ -71,11 +58,25 @@ class MovieTorrentDownloaderApp(App):
         download_button = Button(text='Download Selected')
         download_button.bind(on_release=self.download_selected_movies)
         footer_layout.add_widget(download_button)
-        return footer_layout
+        content_layout.add_widget(footer_layout)
+
+        root_layout.add_widget(content_layout)
+
+        return root_layout
 
     def search_movies(self, query):
-        pass  # Add implementation for searching movies
-    
+        # Display a progress indicator while searching for movies
+        popup = Popup(title='Searching...', content=ProgressBar(), auto_dismiss=False)
+        popup.open()
+        try:
+            # Perform the search operation
+            # Add implementation for searching movies
+        except Exception as e:
+            # Handle errors gracefully
+            self.show_error_popup(f"An error occurred while searching for movies: {e}")
+        finally:
+            popup.dismiss()
+
     def previous_page(self):
         pass  # Add implementation for navigating to previous page
 
@@ -84,6 +85,11 @@ class MovieTorrentDownloaderApp(App):
     
     def download_selected_movies(self):
         pass  # Add implementation for downloading selected movies
+
+    def show_error_popup(self, message):
+        # Display an error popup with the provided message
+        popup = Popup(title='Error', content=Label(text=message), size_hint=(None, None), size=(400, 200))
+        popup.open()
 
 if __name__ == '__main__':
     MovieTorrentDownloaderApp().run()

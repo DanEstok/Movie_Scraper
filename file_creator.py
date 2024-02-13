@@ -1,30 +1,12 @@
 import xlsxwriter
 import docx
 import logging
-from typing import List, Dict
 
 # Setup logging
 logging.basicConfig(filename='/mnt/data/movie_info_log.txt', level=logging.ERROR,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
-def validate_movie_info(movie_info: List[Dict]) -> None:
-    """
-    Validate the input movie information.
-
-    Parameters:
-    - movie_info: List of dictionaries with extended movie details.
-
-    Raises:
-    - ValueError: If movie_info is not a list of dictionaries or if any dictionary is missing required keys.
-    """
-    if not isinstance(movie_info, list) or not all(isinstance(movie, dict) for movie in movie_info):
-        raise ValueError("movie_info must be a list of dictionaries.")
-    required_keys = {'title_name'}
-    for movie in movie_info:
-        if not required_keys.issubset(movie.keys()):
-            raise ValueError(f"Each movie dictionary must contain at least the following keys: {required_keys}")
-
-def create_excel_spreadsheet(movie_info: List[Dict], file_name: str = 'movie_info.xlsx') -> str:
+def create_excel_spreadsheet(movie_info, file_name='movie_info.xlsx') -> str:
     """
     Creates an Excel spreadsheet with extended movie information.
     
@@ -36,27 +18,21 @@ def create_excel_spreadsheet(movie_info: List[Dict], file_name: str = 'movie_inf
     - Path to the created Excel file or an error message.
     """
     try:
-        validate_movie_info(movie_info)
+        # Validate input data
+        _validate_movie_info(movie_info)
 
-        workbook = xlsxwriter.Workbook(file_name)
-        worksheet = workbook.add_worksheet()
+        # Create workbook and worksheet
+        workbook = _create_workbook(file_name)
+        worksheet = _create_worksheet(workbook)
 
-        bold = workbook.add_format({'bold': True})
+        # Write headers
+        _write_headers(worksheet, movie_info)
 
-        headers = movie_info[0].keys()
-        for col_num, header in enumerate(headers):
-            worksheet.write(0, col_num, header.capitalize(), bold)
+        # Write movie data
+        _write_movie_data(worksheet, movie_info)
 
-        for row_num, movie in enumerate(movie_info, start=1):
-            for col_num, (key, value) in enumerate(movie.items()):
-                if isinstance(value, list):
-                    value = ', '.join(value)
-                worksheet.write(row_num, col_num, value)
-
-        for col_num, header in enumerate(headers):
-            column_len = max(len(str(movie.get(header, ''))) for movie in movie_info)
-            column_len = max(column_len, len(header))
-            worksheet.set_column(col_num, col_num, column_len + 1)
+        # Auto-adjust columns' width
+        _auto_adjust_columns_width(worksheet, movie_info)
 
         workbook.close()
         return f"Excel spreadsheet created successfully: {file_name}"
@@ -64,7 +40,7 @@ def create_excel_spreadsheet(movie_info: List[Dict], file_name: str = 'movie_inf
         logging.error(f"Error creating Excel spreadsheet: {e}")
         return f"An error occurred while creating Excel spreadsheet: {e}"
 
-def create_word_document(movie_info: List[Dict], file_name: str = 'movie_info.docx') -> str:
+def create_word_document(movie_info, file_name='movie_info.docx') -> str:
     """
     Creates a Word document with extended movie information.
     
@@ -76,26 +52,116 @@ def create_word_document(movie_info: List[Dict], file_name: str = 'movie_info.do
     - Path to the created Word file or an error message.
     """
     try:
-        validate_movie_info(movie_info)
+        # Validate input data
+        _validate_movie_info(movie_info)
 
         doc = docx.Document()
         doc.add_heading('Movie Information', 0)
 
-        for movie in movie_info:
-            doc.add_heading(movie.get('title_name', 'N/A'), level=1)
-            movie_table = doc.add_table(rows=1, cols=2)
-            movie_table.style = 'Table Grid'
-            hdr_cells = movie_table.rows[0].cells
-            hdr_cells[0].text = 'Category'
-            hdr_cells[1].text = 'Details'
-            for key, value in movie.items():
-                if key != 'title_name':
-                    row_cells = movie_table.add_row().cells
-                    row_cells[0].text = key.replace('_', ' ').capitalize()
-                    row_cells[1].text = ', '.join(value) if isinstance(value, list) else str(value)
+        # Add movie details
+        _add_movie_details(doc, movie_info)
 
         doc.save(file_name)
         return f"Word document created successfully: {file_name}"
     except Exception as e:
         logging.error(f"Error creating Word document: {e}")
         return f"An error occurred while creating Word document: {e}"
+
+def _validate_movie_info(movie_info):
+    """
+    Validates the input movie information.
+    
+    Parameters:
+    - movie_info: List of dictionaries with extended movie details.
+    
+    Raises:
+    - ValueError: If movie_info is not a list of dictionaries.
+    """
+    if not isinstance(movie_info, list) or not all(isinstance(movie, dict) for movie in movie_info):
+        raise ValueError("movie_info must be a list of dictionaries.")
+
+def _create_workbook(file_name):
+    """
+    Creates a new Excel workbook.
+    
+    Parameters:
+    - file_name: Name of the output Excel file.
+    
+    Returns:
+    - Workbook object.
+    """
+    return xlsxwriter.Workbook(file_name)
+
+def _create_worksheet(workbook):
+    """
+    Adds a new worksheet to the Excel workbook.
+    
+    Parameters:
+    - workbook: Workbook object.
+    
+    Returns:
+    - Worksheet object.
+    """
+    return workbook.add_worksheet()
+
+def _write_headers(worksheet, movie_info):
+    """
+    Writes headers to the Excel worksheet.
+    
+    Parameters:
+    - worksheet: Worksheet object.
+    - movie_info: List of dictionaries with extended movie details.
+    """
+    bold = worksheet.add_format({'bold': True})
+    headers = movie_info[0].keys()
+    for col_num, header in enumerate(headers):
+        worksheet.write(0, col_num, header.capitalize(), bold)
+
+def _write_movie_data(worksheet, movie_info):
+    """
+    Writes movie data to the Excel worksheet.
+    
+    Parameters:
+    - worksheet: Worksheet object.
+    - movie_info: List of dictionaries with extended movie details.
+    """
+    for row_num, movie in enumerate(movie_info, start=1):
+        for col_num, (key, value) in enumerate(movie.items()):
+            if isinstance(value, list):
+                value = ', '.join(value)
+            worksheet.write(row_num, col_num, value)
+
+def _auto_adjust_columns_width(worksheet, movie_info):
+    """
+    Auto-adjusts columns' width based on the longest item in each column.
+    
+    Parameters:
+    - worksheet: Worksheet object.
+    - movie_info: List of dictionaries with extended movie details.
+    """
+    headers = movie_info[0].keys()
+    for col_num, header in enumerate(headers):
+        column_len = max(len(str(movie.get(header, ''))) for movie in movie_info)
+        column_len = max(column_len, len(header))
+        worksheet.set_column(col_num, col_num, column_len + 1)
+
+def _add_movie_details(doc, movie_info):
+    """
+    Adds movie details to the Word document.
+    
+    Parameters:
+    - doc: Document object.
+    - movie_info: List of dictionaries with extended movie details.
+    """
+    for movie in movie_info:
+        doc.add_heading(movie.get('title_name', 'N/A'), level=1)
+        movie_table = doc.add_table(rows=1, cols=2)
+        movie_table.style = 'Table Grid'
+        hdr_cells = movie_table.rows[0].cells
+        hdr_cells[0].text = 'Category'
+        hdr_cells[1].text = 'Details'
+        for key, value in movie.items():
+            if key != 'title_name':
+                row_cells = movie_table.add_row().cells
+                row_cells[0].text = key.replace('_', ' ').capitalize()
+                row_cells[1].text = ', '.join(value) if isinstance(value, list) else str(value)

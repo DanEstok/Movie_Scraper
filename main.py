@@ -3,19 +3,17 @@ from gui import MovieTorrentFinderApp
 from updater import Updater
 
 def main():
-    # Initialize the updater
-    updater = Updater()
+    updater = Updater()  # Initialize the updater
     
-    # Check for updates
-    updater.check_for_updates()
-    
-    # Download updates
-    updater.download_updates()
-    
-    # Install updates if any
-    updater.install_updates()
-    
-    # Run the MovieTorrentFinderApp
+    try:
+        updater.check_for_updates()  # Check for updates
+        updater.download_updates()  # Download updates
+        updater.install_updates()  # Install updates if any
+    except Exception as e:
+        print(f"An error occurred during the update process: {e}")
+        # Notify the user about the error
+        # For example: show an error message in the GUI
+        
     app = MovieTorrentFinderApp()
     app.run()
 

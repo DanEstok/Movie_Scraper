@@ -7,88 +7,77 @@ BoxLayout:
     orientation: 'vertical'
 
     # Header section
-    HeaderLayout:
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_y: None
+        height: '50dp'
+
+        # Logo
+        Image:
+            source: 'logo.png'
+            size_hint_x: None
+            width: '50dp'
+
+        # Title
+        Label:
+            text: 'Movie Torrent Downloader'
+            font_size: '20sp'
+            bold: True
+            size_hint_x: None
+            width: self.texture_size[0]
 
     # Main content area
-    ContentLayout:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '10dp'
+
+        # Search bar
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: '40dp'
+
+            TextInput:
+                id: search_input
+                hint_text: 'Search for movies...'
+                multiline: False
+                size_hint_x: 0.8
+
+            Button:
+                text: 'Search'
+                on_release: app.search_movies(search_input.text)
+
+        # Movie list
+        ScrollView:
+            GridLayout:
+                id: movie_grid
+                cols: 3
+                spacing: '10dp'
+                size_hint_y: None
+                height: self.minimum_height
+                row_default_height: '100dp'
+                padding: '10dp'
+
+        # Footer section
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: None
+            height: '50dp'
+            spacing: '10dp'
+
+            Button:
+                text: 'Previous Page'
+                on_release: app.previous_page()
+
+            Label:
+                text: 'Page ' + str(app.current_page)
+
+            Button:
+                text: 'Next Page'
+                on_release: app.next_page()
+
+            Button:
+                text: 'Download Selected'
+                on_release: app.download_selected_movies()
 
 # Additional UI components and layout definitions can be added here if needed
-
-<HeaderLayout>:
-    orientation: 'horizontal'
-    size_hint_y: None
-    height: '50dp'
-
-    # Logo
-    Image:
-        source: 'logo.png'
-        size_hint_x: None
-        width: '50dp'
-
-    # Title
-    Label:
-        text: 'Movie Torrent Downloader'
-        font_size: '20sp'
-        bold: True
-        size_hint_x: None
-        width: self.texture_size[0]
-
-<ContentLayout>:
-    orientation: 'vertical'
-    padding: '10dp'
-
-    # Search bar
-    SearchBar:
-
-    # Movie list
-    MovieList:
-
-    # Footer section
-    FooterLayout:
-
-<SearchBar>:
-    orientation: 'horizontal'
-    size_hint_y: None
-    height: '40dp'
-
-    TextInput:
-        id: search_input
-        hint_text: 'Search for movies...'
-        multiline: False
-        size_hint_x: 0.8
-
-    Button:
-        text: 'Search'
-        on_release: app.search_movies(search_input.text)
-
-<MovieList>:
-    ScrollView:
-        GridLayout:
-            id: movie_grid
-            cols: 3
-            spacing: '10dp'
-            size_hint_y: None
-            height: self.minimum_height
-            row_default_height: '100dp'
-            padding: '10dp'
-
-<FooterLayout>:
-    orientation: 'horizontal'
-    size_hint_y: None
-    height: '50dp'
-    spacing: '10dp'
-
-    Button:
-        text: 'Previous Page'
-        on_release: app.previous_page()
-
-    Label:
-        text: 'Page ' + str(app.current_page)
-
-    Button:
-        text: 'Next Page'
-        on_release: app.next_page()
-
-    Button:
-        text: 'Download Selected'
-        on_release: app.download_selected_movies()
