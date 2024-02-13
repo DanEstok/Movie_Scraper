@@ -1,112 +1,124 @@
-import tkinter as tk
-from tkinter import messagebox
-import subprocess
-import time
-from datetime import datetime
-import tkinter.ttk as ttk
-from imdb_scraper import scrape_imdb_movies, scrape_imdb_movie_info
-from piratebay_scraper import search_tpb, is_tpb_running
-from utorrent_integration import add_to_utorrent, is_utorrent_running
-from subtitle_finder import search_subtitles, download_subtitles
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
+from kivy.uix.spinner import Spinner
+from kivy.uix.togglebutton import ToggleButton
+from kivy.properties import BooleanProperty
+from kivy.lang import Builder
+
+from imdb_scraper import scrape_imdb_movies
+from piratebay_scraper import search_tpb
+from utorrent_integration import add_to_utorrent
+from subtitle_finder import download_subtitles
 from file_creator import create_excel_spreadsheet, create_word_document
 
-# Initialize Tkinter GUI
-root = tk.Tk()
-root.title('Movie Torrent Finder')
+from ml_recommendation import MovieRecommendationSystem
 
-# Initialize variables
-user_agents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
-    'Mozilla/5.0 (Windows NT 10.0; WOW64; Trident/7.0; AS; rv:11.0) like Gecko',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.79 Safari/537.36 Edge/14.14393',
-    'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:54.0) Gecko/20100101 Firefox/54.0',
-    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2490.86 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0) Gecko/20100101 Firefox/40.1'
-]
+Builder.load_file('root_widget.kv')
 
-start_year = tk.StringVar()
-end_year = tk.StringVar()
-start_year.set(str(datetime.now().year - 5))
-end_year.set(str(datetime.now().year))
+class RootWidget(BoxLayout):
+    dark_mode = BooleanProperty(False)
 
-genre_var = tk.StringVar()
-genre_var.set('action')
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.spacing = 10
+        
+        self.recommendation_system = MovieRecommendationSystem()
+        
+        year_layout = BoxLayout(orientation='horizontal', spacing=10)
+        year_layout.add_widget(Label(text='Start Year:'))
+        self.start_year = TextInput(multiline=False)
+        year_layout.add_widget(self.start_year)
+        year_layout.add_widget(Label(text='End Year:'))
+        self.end_year = TextInput(multiline=False)
+        year_layout.add_widget(self.end_year)
+        self.add_widget(year_layout)
 
-rating_var = tk.StringVar()
-rating_var.set('0')
+        self.genre_spinner = Spinner(text='Genre', values=['action', 'comedy', 'drama', 'horror', 'sci-fi'])
+        self.add_widget(self.genre_spinner)
 
-seeder_entry = tk.Entry(root, width=5)
-leecher_entry = tk.Entry(root, width=5)
-file_size_entry = tk.Entry(root, width=5)
+        rating_layout = BoxLayout(orientation='horizontal', spacing=10)
+        rating_layout.add_widget(Label(text='Minimum Rating:'))
+        self.rating = TextInput(multiline=False)
+        rating_layout.add_widget(self.rating)
+        self.add_widget(rating_layout)
 
-# Create GUI elements
-year_label = tk.Label(root, text='Year Range:', font=('Arial', 12, 'bold'))
-start_year_label = tk.Label(root, textvariable=start_year, font=('Arial', 10))
-end_year_label = tk.Label(root, textvariable=end_year, font=('Arial', 10))
-genre_label = tk.Label(root, text='Genre:', font=('Arial', 12, 'bold'))
-rating_label = tk.Label(root, text='Rating:', font=('Arial', 12, 'bold'))
-seeder_label = tk.Label(root, text='Min Seeders:', font=('Arial', 12, 'bold'))
-leech_label = tk.Label(root, text='Max Leechers:', font=('Arial', 12, 'bold'))
-file_size_label = tk.Label(root, text='Max File Size (MB):', font=('Arial', 12, 'bold'))
+        self.dark_mode_button = ToggleButton(text='Dark Mode: OFF', group='mode')
+        self.dark_mode_button.bind(on_press=self.toggle_dark_mode)
+        self.add_widget(self.dark_mode_button)
 
-genre_options = ['action', 'comedy', 'drama', 'horror', 'sci-fi']
-genre_dropdown = ttk.Combobox(root, textvariable=genre_var, state='readonly', values=genre_options, font=('Arial', 10))
+        button_layout = BoxLayout(orientation='horizontal', spacing=10)
+        self.search_button = Button(text='Search')
+        self.search_button.bind(on_press=self.add_torrents)
+        button_layout.add_widget(self.search_button)
+        self.download_subtitle_button = Button(text='Download Subtitles')
+        self.download_subtitle_button.bind(on_press=self.download_subtitles)
+        button_layout.add_widget(self.download_subtitle_button)
+        self.excel_button = Button(text='Create Excel Spreadsheet')
+        self.excel_button.bind(on_press=self.create_excel_spreadsheet)
+        button_layout.add_widget(self.excel_button)
+        self.word_button = Button(text='Create Word Document')
+        self.word_button.bind(on_press=self.create_word_document)
+        button_layout.add_widget(self.word_button)
+        self.exit_button = Button(text='Exit')
+        self.exit_button.bind(on_press=self.exit_app)
+        button_layout.add_widget(self.exit_button)
+        self.add_widget(button_layout)
 
-rating_options = [str(i) for i in range(0, 11)]
-rating_dropdown = ttk.Combobox(root, textvariable=rating_var, state='readonly', values=rating_options, font=('Arial', 10))
+    def toggle_dark_mode(self, instance):
+        if instance.state == 'down':
+            self.dark_mode = True
+            self.dark_mode_button.text = 'Dark Mode: ON'
+            # Apply dark mode theme
+        else:
+            self.dark_mode = False
+            self.dark_mode_button.text = 'Dark Mode: OFF'
+            # Apply light mode theme
 
-movie_label = tk.Label(root, text='Movie Title:', font=('Arial', 12, 'bold'))
-movie_entry = tk.Entry(root, width=50, font=('Arial', 10))
+    def add_torrents(self, instance):
+        start_year = self.start_year.text
+        end_year = self.end_year.text
+        genre = self.genre_spinner.text
+        rating = self.rating.text
 
-# Create GUI buttons
-search_button = ttk.Button(root, text='Search', command=add_torrents, font=('Arial', 10, 'bold'))
-download_subtitle_button = ttk.Button(root, text='Download Subtitles', command=download_subtitles, font=('Arial', 10, 'bold'))
-excel_button = ttk.Button(root, text='Create Excel Spreadsheet', command=create_excel_spreadsheet, font=('Arial', 10, 'bold'))
-word_button = ttk.Button(root, text='Create Word Document', command=create_word_document, font=('Arial', 10, 'bold'))
-exit_button = ttk.Button(root, text='Exit', command=root.quit, font=('Arial', 10, 'bold'))
+        try:
+            movie_titles = self.recommendation_system.recommend_movies({'start_year': start_year, 'end_year': end_year, 'genre': genre, 'rating': rating})
+            self.display_recommendations(movie_titles)
+        except Exception as e:
+            print(f"An error occurred: {e}")
 
-# Create GUI frames
-year_range_frame = tk.Frame(root, padding=(5, 5, 5, 0))
-genre_frame = tk.Frame(root, padding=(5, 5, 5, 0))
-rating_frame = tk.Frame(root, padding=(5, 5, 5, 0))
-seeder_frame = tk.Frame(root, padding=(5, 5, 5, 0))
-leecher_frame = tk.Frame(root, padding=(5, 5, 5, 0))
-file_size_frame = tk.Frame(root, padding=(5, 5, 5, 0))
+    def download_subtitles(self, instance):
+        movie_title = 'Example Movie'
+        subtitle_url = download_subtitles(movie_title)
+        if subtitle_url:
+            print(f"Subtitles downloaded successfully from: {subtitle_url}")
+        else:
+            print("No subtitles found for the movie.")
 
-# Layout GUI elements
-year_label.grid(row=0, column=0, sticky='w')
-start_year_label.grid(row=0, column=1, sticky='w')
-end_year_label.grid(row=0, column=2, sticky='w')
-genre_label.grid(row=1, column=0, sticky='w')
-rating_label.grid(row=2, column=0, sticky='w')
-seeder_label.grid(row=3, column=0, sticky='w')
-leech_label.grid(row=4, column=0, sticky='w')
-file_size_label.grid(row=5, column=0, sticky='w')
+    def create_excel_spreadsheet(self, instance):
+        movie_info = [{'title': 'Movie 1', 'rating': 8.0, 'genre': 'Action'},
+                      {'title': 'Movie 2', 'rating': 7.5, 'genre': 'Comedy'},
+                      {'title': 'Movie 3', 'rating': 7.2, 'genre': 'Drama'}]
+        create_excel_spreadsheet(movie_info)
+        print("Excel spreadsheet created successfully.")
 
-genre_dropdown.grid(row=1, column=1, sticky='w')
-rating_dropdown.grid(row=2, column=1, sticky='w')
-seeder_entry.grid(row=3, column=1, sticky='w')
-leecher_entry.grid(row=4, column=1, sticky='w')
-file_size_entry.grid(row=5, column=1, sticky='w')
+    def create_word_document(self, instance):
+        movie_info = [{'title': 'Movie 1', 'rating': 8.0, 'genre': 'Action'},
+                      {'title': 'Movie 2', 'rating': 7.5, 'genre': 'Comedy'},
+                      {'title': 'Movie 3', 'rating': 7.2, 'genre': 'Drama'}]
+        create_word_document(movie_info)
+        print("Word document created successfully.")
 
-movie_label.grid(row=6, column=0, sticky='w')
-movie_entry.grid(row=6, column=1, sticky='w')
+    def exit_app(self, instance):
+        App.get_running_app().stop()
 
-# Place GUI buttons
-search_button.grid(row=7, column=0, sticky='w', padx=5, pady=5)
-download_subtitle_button.grid(row=7, column=1, sticky='w', padx=5, pady=5)
-excel_button.grid(row=7, column=2, sticky='w', padx=5, pady=5)
-word_button.grid(row=7, column=3, sticky='w', padx=5, pady=5)
-exit_button.grid(row=7, column=4, sticky='w', padx=5, pady=5)
+    def display_recommendations(self, movie_titles):
+        for movie_title in movie_titles:
+            print(movie_title)
 
-# Place GUI frames
-year_range_frame.grid(row=0, column=0, columnspan=3, padx=5, pady=5)
-genre_frame.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
-rating_frame.grid(row=2, column=0, columnspan=3, padx=5, pady=5)
-seeder_frame.grid(row=3, column=0, columnspan=3, padx=5, pady=5)
-leecher_frame.grid(row=4, column=0, columnspan=3, padx=5, pady=5)
-file_size_frame.grid(row=5, column=0, columnspan=3, padx=5, pady=5)
-
-root.iconbitmap('path/to/icon.ico')
-
-root.mainloop()
+class MovieTorrentFinderApp(App):
+    def build(self):
+        return RootWidget()
