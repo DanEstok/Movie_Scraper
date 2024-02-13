@@ -1,111 +1,94 @@
-<RootWidget>:
-    GridLayout:
-        cols: 2
-        spacing: dp(10)
-        padding: dp(20)
-        canvas.before:
-            Color:
-                rgba: 0.95, 0.95, 0.95, 1
-            Rectangle:
-                size: self.size
-                pos: self.pos
+# Import custom widgets and layouts if necessary
+#:import CustomButton widgets.custom_button.CustomButton
+#:import CustomLabel widgets.custom_label.CustomLabel
 
-        Label:
-            text: 'Year Range:'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(100)
+# Define the root widget layout
+BoxLayout:
+    orientation: 'vertical'
 
-        BoxLayout:
-            orientation: 'horizontal'
-            spacing: dp(5)
+    # Header section
+    HeaderLayout:
 
-            TextInput:
-                id: start_year
-                hint_text: 'Start Year'
-                font_size: sp(16)
-                multiline: False
-                size_hint_x: None
-                width: dp(100)
+    # Main content area
+    ContentLayout:
 
-            TextInput:
-                id: end_year
-                hint_text: 'End Year'
-                font_size: sp(16)
-                multiline: False
-                size_hint_x: None
-                width: dp(100)
+# Additional UI components and layout definitions can be added here if needed
 
-        Label:
-            text: 'Genre:'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(100)
+<HeaderLayout>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: '50dp'
 
-        Spinner:
-            id: genre_spinner
-            text: 'Select Genre'
-            values: ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi']
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(150)
+    # Logo
+    Image:
+        source: 'logo.png'
+        size_hint_x: None
+        width: '50dp'
 
-        Label:
-            text: 'Minimum Rating:'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(150)
+    # Title
+    Label:
+        text: 'Movie Torrent Downloader'
+        font_size: '20sp'
+        bold: True
+        size_hint_x: None
+        width: self.texture_size[0]
 
-        TextInput:
-            id: rating
-            hint_text: 'Minimum Rating'
-            font_size: sp(16)
-            multiline: False
-            size_hint_x: None
-            width: dp(100)
+<ContentLayout>:
+    orientation: 'vertical'
+    padding: '10dp'
 
-        Button:
-            text: 'Search'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(150)
-            on_press: root.add_torrents()
+    # Search bar
+    SearchBar:
 
-        Button:
-            text: 'Download Subtitles'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(200)
-            on_press: root.download_subtitles()
+    # Movie list
+    MovieList:
 
-        Button:
-            text: 'Create Excel Spreadsheet'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(250)
-            on_press: root.create_excel_spreadsheet()
+    # Footer section
+    FooterLayout:
 
-        Button:
-            text: 'Create Word Document'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(250)
-            on_press: root.create_word_document()
+<SearchBar>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: '40dp'
 
-        Button:
-            text: 'Exit'
-            font_size: sp(16)
-            size_hint_x: None
-            width: dp(100)
-            on_press: app.stop()
-            
-        BoxLayout:
-            id: progress_indicator
+    TextInput:
+        id: search_input
+        hint_text: 'Search for movies...'
+        multiline: False
+        size_hint_x: 0.8
+
+    Button:
+        text: 'Search'
+        on_release: app.search_movies(search_input.text)
+
+<MovieList>:
+    ScrollView:
+        GridLayout:
+            id: movie_grid
+            cols: 3
+            spacing: '10dp'
             size_hint_y: None
-            height: dp(20)
-            padding: dp(5)
-            opacity: 0  # Initially hidden
-            ProgressBar:
-                id: progress_bar
-                max: 100
-                value: 0
+            height: self.minimum_height
+            row_default_height: '100dp'
+            padding: '10dp'
+
+<FooterLayout>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: '50dp'
+    spacing: '10dp'
+
+    Button:
+        text: 'Previous Page'
+        on_release: app.previous_page()
+
+    Label:
+        text: 'Page ' + str(app.current_page)
+
+    Button:
+        text: 'Next Page'
+        on_release: app.next_page()
+
+    Button:
+        text: 'Download Selected'
+        on_release: app.download_selected_movies()
