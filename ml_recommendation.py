@@ -1,36 +1,38 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.neighbors import NearestNeighbors
+from scipy.sparse.linalg import svds
+import numpy as np
 
 class MovieRecommendationSystem:
-    def __init__(self):
-        # Load dataset (replace this with your actual dataset)
-        self.data = pd.read_csv('movie_data.csv')  # Sample movie dataset
-        
-        # Preprocess data (feature engineering, scaling, etc.)
-        self.processed_data = self.preprocess_data(self.data)
-        
-        # Train model
-        self.model = self.train_model(self.processed_data)
-    
-    def preprocess_data(self, data):
-        # Preprocess data as needed (e.g., encode categorical variables, scale numerical features)
-        # This method will depend on the structure of your dataset
-        return data
-    
-    def train_model(self, data):
-        # Split data into train and test sets
-        X_train, X_test = train_test_split(data, test_size=0.2, random_state=42)
-        
-        # Train a recommendation model (e.g., collaborative filtering)
-        model = NearestNeighbors(n_neighbors=5, algorithm='auto')
-        model.fit(X_train)
-        
-        return model
-    
-    def recommend_movies(self, user_preferences):
-        # Recommend movies based on user preferences
-        # This method will use the trained model to generate recommendations
-        
-        # Example: For now, return top 5 movies from the dataset
-        return self.data['movie_title'][:5].tolist()
+    def __init__(self, data_path='movie_data.csv'):
+        self.data = pd.read_csv(data_path)
+        self.user_movie_matrix = self.create_user_movie_matrix(self.data)
+        self.U, self.sigma, self.Vt = svds(self.user_movie_matrix, k=min(self.user_movie_matrix.shape)-1)
+        self.sigma = np.diag(self.sigma)
+
+    def create_user_movie_matrix(self, data):
+        user_movie_matrix = data.pivot(index='user_id', columns='movie_id', values='rating').fillna(0)
+        return user_movie_matrix
+
+    def recommend_movies(self, user_id, num_recommendations=5):
+        user_ratings = self.user_movie_matrix.loc[user_id]
+        user_ratings = user_ratings.values.reshape(1, -1)
+        predicted_ratings = np.dot(np.dot(self.U, self.sigma), self.Vt)
+        user_predicted_ratings = predicted_ratings[user_id - 1]
+
+        # Filter out movies already rated by the user
+        unrated_movies_idx = np.where(user_ratings == 0)[1]
+        user_predicted_ratings = user_predicted_ratings[unrated_movies_idx]
+
+        # Get indices of top-rated movies
+        recommended_movie_indices = np.argsort(user_predicted_ratings)[::-1][:num_recommendations]
+
+        # Get corresponding movie titles
+        recommended_movies = self.data.loc[self.data['movie_id'].isin(recommended_movie_indices + 1), 'movie_title'].tolist()
+
+        return recommended_movies
+
+# Example usage:
+# recommendation_system = MovieRecommendationSystem()
+# recommendations = recommendation_system.recommend_movies(user_id=1)
+# print(recommendations)

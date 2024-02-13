@@ -5,51 +5,45 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.spinner import Spinner
 from kivy.uix.togglebutton import ToggleButton
-from kivy.properties import BooleanProperty
-from kivy.lang import Builder
+from kivy.uix.progressbar import ProgressBar
+from kivy.clock import Clock
 
 from imdb_scraper import scrape_imdb_movies
 from piratebay_scraper import search_tpb
 from utorrent_integration import add_to_utorrent
 from subtitle_finder import download_subtitles
 from file_creator import create_excel_spreadsheet, create_word_document
-
 from ml_recommendation import MovieRecommendationSystem
 
-Builder.load_file('root_widget.kv')
-
 class RootWidget(BoxLayout):
-    dark_mode = BooleanProperty(False)
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.orientation = 'vertical'
         self.spacing = 10
-        
+
         self.recommendation_system = MovieRecommendationSystem()
-        
+
+        # Year range input
+        self.start_year = TextInput(multiline=False, hint_text='Start Year')
+        self.end_year = TextInput(multiline=False, hint_text='End Year')
         year_layout = BoxLayout(orientation='horizontal', spacing=10)
-        year_layout.add_widget(Label(text='Start Year:'))
-        self.start_year = TextInput(multiline=False)
         year_layout.add_widget(self.start_year)
-        year_layout.add_widget(Label(text='End Year:'))
-        self.end_year = TextInput(multiline=False)
         year_layout.add_widget(self.end_year)
         self.add_widget(year_layout)
 
+        # Genre selection
         self.genre_spinner = Spinner(text='Genre', values=['action', 'comedy', 'drama', 'horror', 'sci-fi'])
         self.add_widget(self.genre_spinner)
 
-        rating_layout = BoxLayout(orientation='horizontal', spacing=10)
-        rating_layout.add_widget(Label(text='Minimum Rating:'))
-        self.rating = TextInput(multiline=False)
-        rating_layout.add_widget(self.rating)
-        self.add_widget(rating_layout)
+        # Rating input
+        self.rating = TextInput(multiline=False, hint_text='Minimum Rating')
+        self.add_widget(self.rating)
 
+        # Dark mode toggle button
         self.dark_mode_button = ToggleButton(text='Dark Mode: OFF', group='mode')
-        self.dark_mode_button.bind(on_press=self.toggle_dark_mode)
         self.add_widget(self.dark_mode_button)
 
+        # Buttons
         button_layout = BoxLayout(orientation='horizontal', spacing=10)
         self.search_button = Button(text='Search')
         self.search_button.bind(on_press=self.add_torrents)
@@ -68,15 +62,10 @@ class RootWidget(BoxLayout):
         button_layout.add_widget(self.exit_button)
         self.add_widget(button_layout)
 
-    def toggle_dark_mode(self, instance):
-        if instance.state == 'down':
-            self.dark_mode = True
-            self.dark_mode_button.text = 'Dark Mode: ON'
-            # Apply dark mode theme
-        else:
-            self.dark_mode = False
-            self.dark_mode_button.text = 'Dark Mode: OFF'
-            # Apply light mode theme
+        # Progress indicator
+        self.progress_indicator = ProgressBar(max=100, size_hint_y=None, height=20)
+        self.progress_indicator.opacity = 0
+        self.add_widget(self.progress_indicator)
 
     def add_torrents(self, instance):
         start_year = self.start_year.text
@@ -84,13 +73,22 @@ class RootWidget(BoxLayout):
         genre = self.genre_spinner.text
         rating = self.rating.text
 
+        # Show progress indicator
+        self.show_progress_indicator()
+
+        # Perform torrent search task
         try:
             movie_titles = self.recommendation_system.recommend_movies({'start_year': start_year, 'end_year': end_year, 'genre': genre, 'rating': rating})
             self.display_recommendations(movie_titles)
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"An error occurred during torrent search: {e}")
+            # Hide progress indicator on error
+            self.hide_progress_indicator()
 
     def download_subtitles(self, instance):
+        # Show progress indicator
+        self.show_progress_indicator()
+
         movie_title = 'Example Movie'
         subtitle_url = download_subtitles(movie_title)
         if subtitle_url:
@@ -98,27 +96,53 @@ class RootWidget(BoxLayout):
         else:
             print("No subtitles found for the movie.")
 
+        # Hide progress indicator after task completion
+        Clock.schedule_once(self.hide_progress_indicator, 2)
+
     def create_excel_spreadsheet(self, instance):
+        # Show progress indicator
+        self.show_progress_indicator()
+
         movie_info = [{'title': 'Movie 1', 'rating': 8.0, 'genre': 'Action'},
                       {'title': 'Movie 2', 'rating': 7.5, 'genre': 'Comedy'},
-                      {'title': 'Movie 3', 'rating': 7.2, 'genre': 'Drama'}]
+                      {'title': 'Movie 3', 'rating': 7.2, 'genre': 'Drama'}]  # Example data
         create_excel_spreadsheet(movie_info)
         print("Excel spreadsheet created successfully.")
 
+        # Hide progress indicator after task completion
+        Clock.schedule_once(self.hide_progress_indicator, 2)
+
     def create_word_document(self, instance):
+        # Show progress indicator
+        self.show_progress_indicator()
+
         movie_info = [{'title': 'Movie 1', 'rating': 8.0, 'genre': 'Action'},
                       {'title': 'Movie 2', 'rating': 7.5, 'genre': 'Comedy'},
-                      {'title': 'Movie 3', 'rating': 7.2, 'genre': 'Drama'}]
+                      {'title': 'Movie 3', 'rating': 7.2, 'genre': 'Drama'}]  # Example data
         create_word_document(movie_info)
         print("Word document created successfully.")
+
+        # Hide progress indicator after task completion
+        Clock.schedule_once(self.hide_progress_indicator, 2)
 
     def exit_app(self, instance):
         App.get_running_app().stop()
 
     def display_recommendations(self, movie_titles):
+        # Display recommended movies to the user
         for movie_title in movie_titles:
             print(movie_title)
+
+    def show_progress_indicator(self):
+        self.progress_indicator.opacity = 1
+
+    def hide_progress_indicator(self, dt):
+        self.progress_indicator.opacity = 0
 
 class MovieTorrentFinderApp(App):
     def build(self):
         return RootWidget()
+
+if __name__ == '__main__':
+    app = MovieTorrentFinderApp()
+    app.run()

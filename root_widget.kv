@@ -1,43 +1,111 @@
 <RootWidget>:
-    size: 800, 600
-
     GridLayout:
         cols: 2
-        rows: 6
+        spacing: dp(10)
+        padding: dp(20)
+        canvas.before:
+            Color:
+                rgba: 0.95, 0.95, 0.95, 1
+            Rectangle:
+                size: self.size
+                pos: self.pos
 
         Label:
             text: 'Year Range:'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(100)
+
+        BoxLayout:
+            orientation: 'horizontal'
+            spacing: dp(5)
+
+            TextInput:
+                id: start_year
+                hint_text: 'Start Year'
+                font_size: sp(16)
+                multiline: False
+                size_hint_x: None
+                width: dp(100)
+
+            TextInput:
+                id: end_year
+                hint_text: 'End Year'
+                font_size: sp(16)
+                multiline: False
+                size_hint_x: None
+                width: dp(100)
+
+        Label:
+            text: 'Genre:'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(100)
+
+        Spinner:
+            id: genre_spinner
+            text: 'Select Genre'
+            values: ['Action', 'Comedy', 'Drama', 'Horror', 'Sci-Fi']
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(150)
+
+        Label:
+            text: 'Minimum Rating:'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(150)
 
         TextInput:
-            id: start_year
-            width: 50
-            text: root.start_year
+            id: rating
+            hint_text: 'Minimum Rating'
+            font_size: sp(16)
             multiline: False
-
-        TextInput:
-            id: end_year
-            width: 50
-            text: root.end_year
-            multiline: False
-
-        # Add other GUI elements here
+            size_hint_x: None
+            width: dp(100)
 
         Button:
             text: 'Search'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(150)
             on_press: root.add_torrents()
 
         Button:
             text: 'Download Subtitles'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(200)
             on_press: root.download_subtitles()
 
         Button:
             text: 'Create Excel Spreadsheet'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(250)
             on_press: root.create_excel_spreadsheet()
 
         Button:
             text: 'Create Word Document'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(250)
             on_press: root.create_word_document()
 
         Button:
             text: 'Exit'
+            font_size: sp(16)
+            size_hint_x: None
+            width: dp(100)
             on_press: app.stop()
+            
+        BoxLayout:
+            id: progress_indicator
+            size_hint_y: None
+            height: dp(20)
+            padding: dp(5)
+            opacity: 0  # Initially hidden
+            ProgressBar:
+                id: progress_bar
+                max: 100
+                value: 0

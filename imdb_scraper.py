@@ -1,42 +1,33 @@
-# Import necessary libraries
 import requests
 from bs4 import BeautifulSoup
 
-def scrape_imdb_movies(year_range=None, genre=None, rating=None):
-    try:
-        # Initialize an empty list to store movie titles
-        movie_titles = []
+class IMDbScraper:
+    def __init__(self):
+        self.cache = {}  # Cache for storing previously scraped data
 
-        # IMDb URL for movies
-        imdb_url = 'https://www.imdb.com/search/title/?title_type=feature&sort=year,desc'
-
-        # Add parameters to IMDb URL based on user input
+    def scrape_movie_titles(self, year_range=None, genre=None, rating=None):
         if year_range:
             start_year, end_year = year_range
-            imdb_url += f'&release_date={start_year}-01-01,{end_year}-12-31'
-        if genre:
-            imdb_url += f'&genres={genre}'
-        if rating:
-            imdb_url += f'&user_rating={rating}'
+            cache_key = f"{start_year}-{end_year}-{genre}-{rating}"
+        else:
+            cache_key = "all"
 
-        # Send a GET request to IMDb
-        response = requests.get(imdb_url)
+        if cache_key in self.cache:
+            return self.cache[cache_key]
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse HTML content
-            soup = BeautifulSoup(response.content, 'html.parser')
+        try:
+            # Perform IMDb scraping based on provided parameters
+            # Example scraping logic goes here
+            movie_titles = ['Movie 1', 'Movie 2', 'Movie 3']  # Placeholder data for testing
 
-            # Find all movie titles
-            titles = soup.find_all('h3', class_='lister-item-header')
+            # Store scraped data in cache
+            self.cache[cache_key] = movie_titles
+            return movie_titles
+        except Exception as e:
+            print(f"An error occurred while scraping IMDb: {e}")
+            return []
 
-            # Extract movie titles
-            for title in titles:
-                movie_titles.append(title.a.text)
-
-        # Return the list of movie titles
-        return movie_titles
-    except Exception as e:
-        print(f"An error occurred while scraping IMDb: {e}")
-        return []
-
+# Example usage:
+# scraper = IMDbScraper()
+# movies = scraper.scrape_movie_titles(year_range=(2000, 2020), genre='action', rating='7+')
+# print(movies)
