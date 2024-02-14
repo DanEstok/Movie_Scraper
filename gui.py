@@ -64,18 +64,22 @@ class MovieTorrentDownloaderApp(App):
 
         return root_layout
 
-    def search_movies(self, query):
-        # Display a progress indicator while searching for movies
-        popup = Popup(title='Searching...', content=ProgressBar(), auto_dismiss=False)
-        popup.open()
-        try:
-            # Perform the search operation
-            # Add implementation for searching movies
-        except Exception as e:
-            # Handle errors gracefully
-            self.show_error_popup(f"An error occurred while searching for movies: {e}")
-        finally:
-            popup.dismiss()
+def search_movies(self, query):
+    # Display a progress indicator while searching for movies
+    popup = Popup(title='Searching...', content=ProgressBar(), auto_dismiss=False)
+    popup.open()
+    
+    try:
+        # Perform the search operation
+        # Replace the comment with the actual implementation for searching movies
+        # Example: movies = MovieAPI.search(query)
+        pass  # Remove this line once the search implementation is added
+    except Exception as e:
+        # Handle errors gracefully
+        self.show_error_popup(f"An error occurred while searching for movies: {e}")
+    finally:
+        popup.dismiss()
+
 
     def previous_page(self):
         pass  # Add implementation for navigating to previous page

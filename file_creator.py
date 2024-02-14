@@ -1,9 +1,10 @@
 import xlsxwriter
 import docx
 import logging
+import xlwt
 
 # Setup logging
-logging.basicConfig(filename='/mnt/data/movie_info_log.txt', level=logging.ERROR,
+logging.basicConfig(filename='movie_info_log.txt', level=logging.ERROR,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
 def create_excel_spreadsheet(movie_info, file_name='movie_info.xlsx') -> str:
@@ -26,7 +27,7 @@ def create_excel_spreadsheet(movie_info, file_name='movie_info.xlsx') -> str:
         worksheet = _create_worksheet(workbook)
 
         # Write headers
-        _write_headers(worksheet, movie_info)
+        _write_headers(workbook, worksheet, movie_info)
 
         # Write movie data
         _write_movie_data(worksheet, movie_info)
@@ -39,33 +40,6 @@ def create_excel_spreadsheet(movie_info, file_name='movie_info.xlsx') -> str:
     except Exception as e:
         logging.error(f"Error creating Excel spreadsheet: {e}")
         return f"An error occurred while creating Excel spreadsheet: {e}"
-
-def create_word_document(movie_info, file_name='movie_info.docx') -> str:
-    """
-    Creates a Word document with extended movie information.
-    
-    Parameters:
-    - movie_info: List of dictionaries with extended movie details.
-    - file_name: Optional; name of the output Word file.
-    
-    Returns:
-    - Path to the created Word file or an error message.
-    """
-    try:
-        # Validate input data
-        _validate_movie_info(movie_info)
-
-        doc = docx.Document()
-        doc.add_heading('Movie Information', 0)
-
-        # Add movie details
-        _add_movie_details(doc, movie_info)
-
-        doc.save(file_name)
-        return f"Word document created successfully: {file_name}"
-    except Exception as e:
-        logging.error(f"Error creating Word document: {e}")
-        return f"An error occurred while creating Word document: {e}"
 
 def _validate_movie_info(movie_info):
     """
@@ -104,24 +78,31 @@ def _create_worksheet(workbook):
     """
     return workbook.add_worksheet()
 
-def _write_headers(worksheet, movie_info):
+def _write_headers(workbook, worksheet, movie_info):
     """
     Writes headers to the Excel worksheet.
-    
+
     Parameters:
+    - workbook: Workbook object.
     - worksheet: Worksheet object.
     - movie_info: List of dictionaries with extended movie details.
     """
-    bold = worksheet.add_format({'bold': True})
+
+    # Define cell formatting
+    bold = workbook.add_format({'bold': True})
+
+    # Write headers
     headers = movie_info[0].keys()
     for col_num, header in enumerate(headers):
         worksheet.write(0, col_num, header.capitalize(), bold)
 
+
+
 def _write_movie_data(worksheet, movie_info):
     """
-    Writes movie data to the Excel worksheet.
+    Writes the movie data to the worksheet.
     
-    Parameters:
+    Parameters
     - worksheet: Worksheet object.
     - movie_info: List of dictionaries with extended movie details.
     """
@@ -131,37 +112,60 @@ def _write_movie_data(worksheet, movie_info):
                 value = ', '.join(value)
             worksheet.write(row_num, col_num, value)
 
+
 def _auto_adjust_columns_width(worksheet, movie_info):
     """
     Auto-adjusts columns' width based on the longest item in each column.
     
-    Parameters:
+    Parameters
     - worksheet: Worksheet object.
     - movie_info: List of dictionaries with extended movie details.
     """
     headers = movie_info[0].keys()
     for col_num, header in enumerate(headers):
-        column_len = max(len(str(movie.get(header, ''))) for movie in movie_info)
-        column_len = max(column_len, len(header))
-        worksheet.set_column(col_num, col_num, column_len + 1)
+        column_len = max(len((movie.get(header, ''))) for movie in movie_info)
+        worksheet.set_column(col_num, col_num, column_len)
 
-def _add_movie_details(doc, movie_info):
-    """
-    Adds movie details to the Word document.
-    
-    Parameters:
-    - doc: Document object.
-    - movie_info: List of dictionaries with extended movie details.
-    """
-    for movie in movie_info:
-        doc.add_heading(movie.get('title_name', 'N/A'), level=1)
-        movie_table = doc.add_table(rows=1, cols=2)
-        movie_table.style = 'Table Grid'
-        hdr_cells = movie_table.rows[0].cells
-        hdr_cells[0].text = 'Category'
-        hdr_cells[1].text = 'Details'
-        for key, value in movie.items():
-            if key != 'title_name':
-                row_cells = movie_table.add_row().cells
-                row_cells[0].text = key.replace('_', ' ').capitalize()
-                row_cells[1].text = ', '.join(value) if isinstance(value, list) else str(value)
+if __name__ == "__main__":
+    # Define the movie_info variable
+    movie_info = [
+        {
+            "title": "The Shawshank Redemption",
+            "year": 1994,
+            "director": "Frank Darabont",
+            "cast": ["Tim Robbins", "Morgan Freeman"],
+            "genre": ["Crime", "Drama"],
+            "rating": 9.3,
+            "duration": "142 min"
+        },
+        {
+            "title": "The Godfather",
+            "year": 1972,
+            "director": "Francis Ford Coppola",
+            "cast": ["Marlon Brando", "Al Pacino"],
+            "genre": ["Crime", "Drama"],
+            "rating": 9.2,
+            "duration": "175 min"
+        }
+    ]
+
+    # Create a new workbook and select the active sheet
+    workbook = xlwt.Workbook()
+    worksheet = workbook.add_sheet('Movie Info')
+
+    # Add a title to the worksheet
+    title = "Movie Information"
+    title_style = xlwt.XFStyle()
+    title_font = xlwt.Font()
+    title_font.bold = True
+    title_style.font = title_font
+    worksheet.write(0, 0, title, title_style)
+
+    # Write the movie data to the worksheet
+    _write_movie_data(worksheet, movie_info)
+
+    # Auto-adjust columns' width based on the longest item in each column
+    _auto_adjust_columns_width(worksheet, movie_info)
+
+    # Save the workbook
+    workbook.save('movie_info.xls')
