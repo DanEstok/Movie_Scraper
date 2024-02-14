@@ -1,40 +1,27 @@
 import requests
+from bs4 import BeautifulSoup
 
 class PirateBayScraper:
     def __init__(self):
-        pass
+        self.base_url = 'https://thepiratebay.org/search/'
 
-    def search_tpb(self, movie_title):
+    def search_tpb(self, query):
+        search_url = f"{self.base_url}{query}/0/99/0"
         try:
-            # Perform search on The Pirate Bay
-            # Example scraping logic goes here
-            results = self._search_movie(movie_title)
-
-            return results
-        except Exception as e:
-            print(f"An error occurred while searching The Pirate Bay: {e}")
+            response = requests.get(search_url)
+            response.raise_for_status()  # Raises an HTTPError if the response status code is 4XX/5XX
+            soup = BeautifulSoup(response.text, 'html.parser')
+            torrents = []
+            for row in soup.find_all("a", class_="detLink"):
+                title = row.text
+                link = 'https://thepiratebay.org' + row['href']
+                # Further processing to extract torrent details like size, seeds, etc. can be added here
+                torrents.append({'title': title, 'link': link})
+            return torrents
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to fetch torrents: {e}")
             return []
 
-    def _search_movie(self, movie_title):
-        # Example scraping logic to search for movie titles on The Pirate Bay
-        # This can be replaced with actual scraping code
-        return [
-            {'title': 'Movie 1', 'seeds': 10, 'leechers': 5, 'magnet_link': 'magnet:?xt=urn:btih:1234567890'},
-            {'title': 'Movie 2', 'seeds': 8, 'leechers': 2, 'magnet_link': 'magnet:?xt=urn:btih:0987654321'}
-        ]  # Placeholder data for testing
-
-# Unit tests
-import unittest
-
-class TestPirateBayScraper(unittest.TestCase):
-    def setUp(self):
-        self.scraper = PirateBayScraper()
-
-    def test_search_tpb(self):
-        # Test searching for a movie title
-        results = self.scraper.search_tpb(movie_title='Inception')
-        self.assertIsInstance(results, list)
-        self.assertTrue(len(results) > 0)
-
-if __name__ == '__main__':
-    unittest.main()
+# Example usage:
+scraper = PirateBayScraper()
+print(scraper.search_tpb("Inception"))

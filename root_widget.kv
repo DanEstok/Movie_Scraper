@@ -2,6 +2,26 @@
 #:import CustomButton widgets.custom_button.CustomButton
 #:import CustomLabel widgets.custom_label.CustomLabel
 
+# SettingsPopup@Popup>:
+    title: 'API Settings'
+    BoxLayout:
+        orientation: 'vertical'
+        Label:
+            text: 'Real-Debrid API Key'
+        TextInput:
+            id: real_debrid_api_key
+            multiline: False
+        Button:
+            text: 'Save'
+            on_release: app.save_api_key(real_debrid_api_key.text)
+
+# SearchResults@ScrollView>:
+    GridLayout:
+        id: results_grid
+        cols: 1
+        size_hint_y: None
+        height: self.minimum_height
+
 # Define the root widget layout
 BoxLayout:
     orientation: 'vertical'
