@@ -10,9 +10,65 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.popup import Popup
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.filechooser import FileChooserIconView
+# from kivy.uix.tabbedpanel import TabbedPanel, TabbedPanelItem     #This is for future chatbot compatibility
 
 # Setup logging
 logging.basicConfig(filename='/mnt/data/movie_info_log.txt', level=logging.INFO, format='%(asctime)s:%(levelname)s:%(message)s')
+""" This is chatbot ready code for future changes
+class ChatTab(TabbedPanelItem):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.text = 'Chat'
+        self.chat_layout = BoxLayout(orientation='vertical')
+        
+        # Chat history
+        self.chat_history = Label(size_hint_y=None)
+        self.chat_history.bind(width=lambda *_: self.chat_history.setter('text_size')(self.chat_history, (self.chat_history.width, None)))
+        self.chat_scroll = ScrollView()
+        self.chat_scroll.add_widget(self.chat_history)
+        self.chat_layout.add_widget(self.chat_scroll)
+
+        # User message input
+        self.user_message = TextInput(hint_text='Type your message...', multiline=False, size_hint_y=None, height=30)
+        self.user_message.bind(on_text_validate=self.on_enter)
+        self.chat_layout.add_widget(self.user_message)
+
+        self.add_widget(self.chat_layout)
+
+    def on_enter(self, instance):
+        message = self.user_message.text
+        self.user_message.text = ''
+        self.send_message(message)
+
+    def send_message(self, message):
+        # Add user's message to chat history
+        self.chat_history.text += f"\nYou: {message}"
+        
+        # Send message to chatbot and get response
+        response = self.get_chatbot_response(message)
+
+        # Add chatbot's response to chat history
+        self.chat_history.text += f"\nChatbot: {response}"
+
+    def get_chatbot_response(self, message):
+        # Placeholder for chatbot functionality
+        return "I'm a chatbot. You said: " + message
+    
+    
+  #This section would replace the first part of below when chatbot functionality is implemented  
+ class MovieTorrentDownloaderApp(App):
+    def build(self):
+        self.root_layout = TabbedPanel()
+        self.setup_header()
+        self.setup_content_area()
+        self.setup_footer()
+
+        # Add chat tab
+        chat_tab = ChatTab()
+        self.root_layout.add_widget(chat_tab)
+
+        return self.root_layout
+"""
 
 class MovieTorrentDownloaderApp(App):
     save_directory = '/mnt/data/'  # Default save directory
